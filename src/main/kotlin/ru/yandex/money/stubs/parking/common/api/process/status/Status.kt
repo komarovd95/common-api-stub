@@ -5,7 +5,7 @@ import ru.yandex.money.stubs.parking.common.api.json.Json
 import ru.yandex.money.stubs.parking.common.api.json.set
 
 data class Status(private val status: Boolean) : Json {
-    override fun toJson(): String {
+    override fun toJson(): JSONObject {
         val jsonObject = JSONObject()
 
         val activeService = JSONObject()
@@ -13,6 +13,6 @@ data class Status(private val status: Boolean) : Json {
 
         jsonObject["status"] = activeService
 
-        return jsonObject.toString()
+        return jsonObject
     }
 }

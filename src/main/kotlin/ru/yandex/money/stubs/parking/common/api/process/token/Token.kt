@@ -6,7 +6,7 @@ import ru.yandex.money.stubs.parking.common.api.json.set
 import java.time.ZonedDateTime
 
 data class Token(private val token: String, private val expiresAt: ZonedDateTime) : Json {
-    override fun toJson(): String {
+    override fun toJson(): JSONObject {
         val jsonObject = JSONObject()
 
         val authorization = JSONObject()
@@ -15,6 +15,6 @@ data class Token(private val token: String, private val expiresAt: ZonedDateTime
 
         jsonObject["authorization"] = authorization
 
-        return jsonObject.toString()
+        return jsonObject
     }
 }

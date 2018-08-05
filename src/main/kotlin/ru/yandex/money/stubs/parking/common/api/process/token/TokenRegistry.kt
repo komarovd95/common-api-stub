@@ -4,7 +4,7 @@ import java.time.ZonedDateTime
 
 interface TokenRegistry {
 
-    fun create(token: String, expiresAt: ZonedDateTime)
+    fun create(token: String, expiresAt: ZonedDateTime): Boolean
 
     operator fun contains(token: String): Boolean
 }

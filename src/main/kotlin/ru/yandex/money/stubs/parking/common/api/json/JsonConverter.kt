@@ -6,7 +6,6 @@ import io.ktor.content.TextContent
 import io.ktor.features.ContentConverter
 import io.ktor.features.suitableCharset
 import io.ktor.http.ContentType
-import io.ktor.http.HttpStatusCode
 import io.ktor.http.withCharset
 import io.ktor.pipeline.PipelineContext
 import io.ktor.request.ApplicationReceiveRequest
@@ -41,6 +40,9 @@ class JsonConverter(private val types: Map<KClass<*>, (Reader) -> Any>) : Conten
         if (value !is Json) {
             throw IllegalArgumentException("Unknown send type")
         }
-        return TextContent(value.toJson(), contentType.withCharset(context.call.suitableCharset()))
+        return TextContent(
+            value.toJson().toString(),
+            contentType.withCharset(context.call.suitableCharset())
+        )
     }
 }

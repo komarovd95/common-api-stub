@@ -8,13 +8,13 @@ import java.io.Reader
 
 data class TokenCredentials(val login: String, val password: String) : Json {
 
-    override fun toJson(): String {
+    override fun toJson(): JSONObject {
         val jsonObject = JSONObject()
 
         jsonObject[LOGIN] = login
         jsonObject[PASSWORD] = password
 
-        return jsonObject.toString()
+        return jsonObject
     }
 
     companion object {
