@@ -8,22 +8,13 @@ data class BalanceRequest(val parkingAccountNumber: String) {
 
     companion object {
 
-        private val PARKING_ID_PATTERN = "^[0-9]{10}$".toRegex()
-
         private const val PARKING_ACCOUNT_NUMBER = "parkingAccountNumber"
 
         val Deserializer: (Reader) -> Any = {
             val jsonObject = JSONObject(it.readText())
 
             if (jsonObject.has(PARKING_ACCOUNT_NUMBER)) {
-                val parkingAccountNumber = jsonObject.getString(PARKING_ACCOUNT_NUMBER)
-
-                if (!parkingAccountNumber.matches(PARKING_ID_PATTERN)) {
-                    ApplicationError.InvalidParkingAccountNumber
-                } else {
-
-                    BalanceRequest(parkingAccountNumber)
-                }
+                BalanceRequest(jsonObject.getString(PARKING_ACCOUNT_NUMBER))
             } else {
                 ApplicationError.InvalidParkingAccountNumber
             }

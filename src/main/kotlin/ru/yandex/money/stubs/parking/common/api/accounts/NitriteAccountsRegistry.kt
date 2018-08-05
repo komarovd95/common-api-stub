@@ -1,9 +1,6 @@
 package ru.yandex.money.stubs.parking.common.api.accounts
 
-import org.dizitart.no2.Document
-import org.dizitart.no2.IndexOptions
-import org.dizitart.no2.IndexType
-import org.dizitart.no2.Nitrite
+import org.dizitart.no2.*
 import org.dizitart.no2.filters.Filters
 import org.slf4j.LoggerFactory
 import ru.yandex.money.stubs.parking.common.api.data.DataException
@@ -36,5 +33,16 @@ class NitriteAccountsRegistry(db: Nitrite) : AccountsRegistry {
         val account = Account(accountNumber, balance)
         log.info("Successful find account: account={}", account)
         return account
+    }
+
+    override fun saveAccount(account: Account) {
+        log.info("Saving account: account={}", account)
+
+        val result = accounts.update(
+                Filters.eq("accountNumber", account.accountNumber),
+                Document.createDocument("balance", account.balance.amount.toPlainString()),
+                UpdateOptions.updateOptions(true)
+        )
+        log.info("Saving account is finished: result={}", result)
     }
 }

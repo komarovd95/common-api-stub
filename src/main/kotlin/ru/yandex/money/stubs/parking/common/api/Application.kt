@@ -25,10 +25,20 @@ import ru.yandex.money.stubs.parking.common.api.auth.commonTokenRegistry
 import ru.yandex.money.stubs.parking.common.api.data.DataRequest
 import ru.yandex.money.stubs.parking.common.api.data.DataService
 import ru.yandex.money.stubs.parking.common.api.json.JsonConverter
+import ru.yandex.money.stubs.parking.common.api.orders.NitriteOrdersRegistry
+import ru.yandex.money.stubs.parking.common.api.parkings.DefaultParkingsRegistry
+import ru.yandex.money.stubs.parking.common.api.parkings.NitriteParkingsRegistry
+import ru.yandex.money.stubs.parking.common.api.parkings.ParkingInfo
 import ru.yandex.money.stubs.parking.common.api.process.balance.BalanceRequest
 import ru.yandex.money.stubs.parking.common.api.process.balance.BalanceService
+import ru.yandex.money.stubs.parking.common.api.process.cost.CostRequest
+import ru.yandex.money.stubs.parking.common.api.process.cost.CostService
+import ru.yandex.money.stubs.parking.common.api.process.deposit.DepositRequest
+import ru.yandex.money.stubs.parking.common.api.process.deposit.DepositService
+import ru.yandex.money.stubs.parking.common.api.process.deposit.NitriteRequestsRegistry
 import ru.yandex.money.stubs.parking.common.api.process.error.ApplicationError
 import ru.yandex.money.stubs.parking.common.api.process.error.ApplicationException
+import ru.yandex.money.stubs.parking.common.api.process.pay.PayService
 import ru.yandex.money.stubs.parking.common.api.process.status.Status
 import ru.yandex.money.stubs.parking.common.api.process.status.StatusService
 import ru.yandex.money.stubs.parking.common.api.process.token.AuthorizationService
@@ -36,13 +46,16 @@ import ru.yandex.money.stubs.parking.common.api.process.token.NitriteCredentials
 import ru.yandex.money.stubs.parking.common.api.process.token.NitriteTokenRegistry
 import ru.yandex.money.stubs.parking.common.api.process.token.TokenCredentials
 import java.io.StringWriter
+import java.math.BigDecimal
 
 fun main(args: Array<String>) {
     val jsonConverter = JsonConverter(
             mapOf(
                 TokenCredentials::class to TokenCredentials.Deserializer,
                 BalanceRequest::class to BalanceRequest.Deserializer,
-                DataRequest::class to DataRequest.Deserializer
+                DataRequest::class to DataRequest.Deserializer,
+                DepositRequest::class to DepositRequest.Deserializer,
+                CostRequest::class to CostRequest.Deserializer
             )
     )
 
@@ -73,6 +86,19 @@ fun main(args: Array<String>) {
 
     val accountsRegistry = NitriteAccountsRegistry(db)
     val balanceService = BalanceService(accountsRegistry, "parking-common-stub")
+
+    val requestsRegistry = NitriteRequestsRegistry(db)
+    val depositService = DepositService(requestsRegistry, accountsRegistry, balanceService)
+
+    val parkingsRegistry = DefaultParkingsRegistry(
+            NitriteParkingsRegistry(db),
+            ParkingInfo(1001, BigDecimal("60.00"))
+    )
+    val ordersRegistry = NitriteOrdersRegistry(db)
+
+    val costService = CostService(accountsRegistry, parkingsRegistry, ordersRegistry)
+
+    val payService = PayService(ordersRegistry)
 
     val statusService = object : StatusService {
         override fun status() = Status(true)
@@ -121,6 +147,18 @@ fun main(args: Array<String>) {
                             val request = call.receive<BalanceRequest>()
                             val response = balanceService.getBalance(request)
                             call.respond(response)
+                        }
+
+                        post("/deposit") {
+                            val request = call.receive<DepositRequest>()
+                            val response = depositService.doDeposit(request)
+                            call.respond(response)
+                        }
+
+                        post("/cost") {
+                            val request = call.receive<CostRequest>()
+                            val details = costService.getCost(request)
+                            call.respond(details)
                         }
                     }
                 }
