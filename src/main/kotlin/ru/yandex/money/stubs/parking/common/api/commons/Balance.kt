@@ -1,4 +1,4 @@
-package ru.yandex.money.stubs.parking.common.api.application.balance
+package ru.yandex.money.stubs.parking.common.api.commons
 
 import org.json.JSONObject
 import ru.yandex.money.stubs.parking.common.api.json.Json

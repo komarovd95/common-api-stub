@@ -20,6 +20,7 @@ import org.dizitart.no2.filters.Filters
 import org.dizitart.no2.tool.Exporter
 import ru.yandex.money.stubs.parking.common.api.accounts.NitriteAccountsRegistry
 import ru.yandex.money.stubs.parking.common.api.application.balance.getBalanceCommand
+import ru.yandex.money.stubs.parking.common.api.application.deposit.depositCommand
 import ru.yandex.money.stubs.parking.common.api.application.status.getStatusCommand
 import ru.yandex.money.stubs.parking.common.api.application.token.getTokenCommand
 import ru.yandex.money.stubs.parking.common.api.auth.AuthorizationException
@@ -41,7 +42,6 @@ import ru.yandex.money.stubs.parking.common.api.process.balance.BalanceService
 import ru.yandex.money.stubs.parking.common.api.process.cost.CostRequest
 import ru.yandex.money.stubs.parking.common.api.process.cost.CostService
 import ru.yandex.money.stubs.parking.common.api.process.deposit.DepositRequest
-import ru.yandex.money.stubs.parking.common.api.process.deposit.DepositService
 import ru.yandex.money.stubs.parking.common.api.process.deposit.NitriteRequestsRegistry
 import ru.yandex.money.stubs.parking.common.api.process.error.ApplicationError
 import ru.yandex.money.stubs.parking.common.api.process.error.ApplicationException
@@ -54,6 +54,7 @@ import ru.yandex.money.stubs.parking.common.api.process.token.NitriteTokenRegist
 import ru.yandex.money.stubs.parking.common.api.process.token.TokenCredentials
 import ru.yandex.money.stubs.parking.common.api.service.accounts.CreateNewAccountService
 import ru.yandex.money.stubs.parking.common.api.service.accounts.DirectAccountService
+import ru.yandex.money.stubs.parking.common.api.service.deposit.DepositService
 import ru.yandex.money.stubs.parking.common.api.service.status.DummyStatusService
 import ru.yandex.money.stubs.parking.common.api.service.token.TokenService
 import java.io.StringWriter
@@ -99,7 +100,7 @@ fun main(args: Array<String>) {
     val balanceService = BalanceService(accountsRegistry, "parking-common-stub")
 
     val requestsRegistry = NitriteRequestsRegistry(db)
-    val depositService = DepositService(requestsRegistry, accountsRegistry, balanceService)
+//    val depositService = DepositService(requestsRegistry, accountsRegistry, balanceService)
 
     val parkingsRegistry = DefaultParkingsRegistry(
             NitriteParkingsRegistry(db),
@@ -141,6 +142,7 @@ fun main(args: Array<String>) {
     val statusService = DummyStatusService()
     val accountService = DirectAccountService(accountsGateway)
     val createNewAccountService = CreateNewAccountService(accountService, accountsGateway)
+    val depositService = DepositService()
 
     val server = embeddedServer(Netty, port = 8080) {
         install(DefaultHeaders)
@@ -171,6 +173,8 @@ fun main(args: Array<String>) {
                     post("/status", handlerOf(getStatusCommand(statusService, tokenService)))
 
                     post("/get-balance", handlerOf(getBalanceCommand(createNewAccountService, tokenService)))
+
+                    post("/deposit", handlerOf(depositCommand(depositService, accountService, tokenService)))
 
 //                    {
 //                        val credentials = call.receive<TokenCredentials>()

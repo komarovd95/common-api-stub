@@ -17,6 +17,11 @@ class DirectAccountService(private val accountsGateway: AccountsGateway) : Accou
         }
     }
 
+    override fun updateAccount(account: Account): Boolean {
+        log.info("Updating account: account={}", account)
+        return accountsGateway.updateAccount(account.accountNumber, account.balance)
+    }
+
     companion object {
         private val log = LoggerFactory.getLogger(DirectAccountService::class.java)
     }

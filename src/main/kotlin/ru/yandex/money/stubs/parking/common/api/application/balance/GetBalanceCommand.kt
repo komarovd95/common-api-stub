@@ -4,6 +4,7 @@ import org.slf4j.LoggerFactory
 import ru.yandex.money.stubs.parking.common.api.commands.Command
 import ru.yandex.money.stubs.parking.common.api.commands.errors.TechnicalError
 import ru.yandex.money.stubs.parking.common.api.commands.factories.CommonAuthCommand
+import ru.yandex.money.stubs.parking.common.api.commons.Balance
 import ru.yandex.money.stubs.parking.common.api.service.accounts.AccountService
 import ru.yandex.money.stubs.parking.common.api.service.accounts.AccountsException
 import ru.yandex.money.stubs.parking.common.api.service.token.TokenService

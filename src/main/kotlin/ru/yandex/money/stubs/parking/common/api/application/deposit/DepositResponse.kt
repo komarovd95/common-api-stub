@@ -1,11 +1,11 @@
-package ru.yandex.money.stubs.parking.common.api.application.balance
+package ru.yandex.money.stubs.parking.common.api.application.deposit
 
 import org.json.JSONObject
 import ru.yandex.money.stubs.parking.common.api.commons.Balance
 import ru.yandex.money.stubs.parking.common.api.json.Json
 import ru.yandex.money.stubs.parking.common.api.json.set
 
-data class GetBalanceResponse(private val balance: Balance, private val operatorName: String) : Json {
+data class DepositResponse(private val balance: Balance, private val operatorName: String) : Json {
 
     override fun toJson(): JSONObject {
         val jsonObject = JSONObject()

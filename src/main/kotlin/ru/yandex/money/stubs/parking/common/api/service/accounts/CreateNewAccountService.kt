@@ -5,7 +5,7 @@ import ru.yandex.money.stubs.parking.common.api.gateways.accounts.AccountsGatewa
 import java.math.BigDecimal
 
 class CreateNewAccountService(private val accountService: AccountService,
-                              private val accountsGateway: AccountsGateway) : AccountService {
+                              private val accountsGateway: AccountsGateway) : AccountService by accountService {
 
     override fun findAccount(accountNumber: String) = try {
         accountService.findAccount(accountNumber)
