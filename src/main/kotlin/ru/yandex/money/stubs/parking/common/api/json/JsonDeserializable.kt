@@ -50,7 +50,7 @@ abstract class JsonDeserializable(private val json: JSONObject) {
             return when {
                 propertyClass == String::class -> getProperty(name) { json.getString(it) as T }
                 propertyClass == Long::class -> getProperty(name) { json.getLong(it) as T }
-                propertyClass == BigDecimal::class -> getProperty(name) { BigDecimal(json.getString(it)) as T }
+                propertyClass == BigDecimal::class -> getProperty(name) { BigDecimal(json.getDouble(it)) as T }
                 propertyClass == Duration::class -> getProperty(name) { Duration.parse(json.getString(it)) as T }
                 propertyClass == JSONObject::class -> getProperty(name) { json.getJSONObject(it) as T }
                 JsonDeserializable::class.isSuperclassOf(propertyClass) -> getProperty(name) { onComplexType(json.getJSONObject(it)) }

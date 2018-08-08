@@ -70,7 +70,7 @@ fun main(args: Array<String>) {
     val createNewAccountService = CreateNewAccountService(accountService, accountsGateway)
     val depositService = DepositService()
     val parkingService = DefaultParkingService(DirectParkingService(parkingGateway))
-    val orderService = OrderService(orderGateway, parkingService)
+    val orderService = OrderService(orderGateway, parkingService, accountService)
     val payService = PayService(accountService, orderService)
     val dataService = NitriteDataService(db)
 
@@ -80,6 +80,7 @@ fun main(args: Array<String>) {
 
         routing {
             accept(ContentType.Application.Json) {
+                post("/token", handlerOf(getTokenCommand(tokenService)))
                 route("/v1") {
                     post("/token", handlerOf(getTokenCommand(tokenService)))
                     post("/status", handlerOf(getStatusCommand(statusService, tokenService)))

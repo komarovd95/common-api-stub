@@ -1,6 +1,7 @@
 package ru.yandex.money.stubs.parking.common.api.gateways.orders
 
 import java.math.BigDecimal
+import java.time.Duration
 import java.time.ZonedDateTime
 
 data class Order(
@@ -9,7 +10,7 @@ data class Order(
     val licensePlate: String,
     val accountNumber: String,
     val startTime: ZonedDateTime,
-    val endTime: ZonedDateTime,
+    val duration: Duration,
     val amount: BigDecimal,
     val paid: BigDecimal,
     val status: OrderStatus,

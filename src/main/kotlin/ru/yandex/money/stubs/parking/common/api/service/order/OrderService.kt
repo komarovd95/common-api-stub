@@ -5,13 +5,19 @@ import ru.yandex.money.stubs.parking.common.api.gateways.GatewayException
 import ru.yandex.money.stubs.parking.common.api.gateways.orders.Order
 import ru.yandex.money.stubs.parking.common.api.gateways.orders.OrderGateway
 import ru.yandex.money.stubs.parking.common.api.gateways.orders.OrderStatus
+import ru.yandex.money.stubs.parking.common.api.service.accounts.AccountService
 import ru.yandex.money.stubs.parking.common.api.service.parkings.ParkingService
 import java.math.BigDecimal
+import java.math.RoundingMode
 import java.time.Duration
 import java.time.ZonedDateTime
 import java.util.UUID
 
-class OrderService(private val orderGateway: OrderGateway, private val parkingService: ParkingService) {
+class OrderService(
+    private val orderGateway: OrderGateway,
+    private val parkingService: ParkingService,
+    private val accountService: AccountService
+) {
 
     fun storeOrder(order: CreatingOrder): OrderInfo {
         return try {
@@ -21,17 +27,32 @@ class OrderService(private val orderGateway: OrderGateway, private val parkingSe
                 order.licensePlate
             )
             log.info("Found existing active order: order={}", existingOrder)
-            if (existingOrder.endTime.isBefore(ZonedDateTime.now())) {
+            val endTime = existingOrder.startTime.plus(existingOrder.duration)
+            if (endTime.isBefore(ZonedDateTime.now())) {
                 log.warn("Order is in incorrect status: order={}", existingOrder)
                 updateOrder(existingOrder.copy(status = OrderStatus.CANCELLED))
                 return createNewOrder(order)
             }
-            val newStatus = if (order.cost.compareTo(BigDecimal.ZERO) == 0) existingOrder.status else OrderStatus.INIT
-            val updatedOrder = existingOrder.copy(
-                amount = existingOrder.amount + order.cost,
-                endTime = existingOrder.endTime.plus(order.duration),
-                status = newStatus
-            )
+            val now = ZonedDateTime.now()
+            val updatedOrder = if (existingOrder.status == OrderStatus.INIT) {
+                existingOrder.copy(
+                    amount = order.cost,
+                    startTime = now,
+                    duration = order.duration
+                )
+            } else {
+                val newStatus = if (order.cost.compareTo(BigDecimal.ZERO) == 0) {
+                    existingOrder.status
+                } else {
+                    OrderStatus.INIT
+                }
+
+                existingOrder.copy(
+                    amount = existingOrder.amount + order.cost,
+                    duration = existingOrder.duration.plus(order.duration),
+                    status = newStatus
+                )
+            }
             updateOrder(updatedOrder)
             OrderInfo(
                 updatedOrder.orderId,
@@ -53,7 +74,7 @@ class OrderService(private val orderGateway: OrderGateway, private val parkingSe
             licensePlate = order.licensePlate,
             accountNumber = order.account.accountNumber,
             startTime = now,
-            endTime = now.plus(order.duration),
+            duration = order.duration,
             amount = order.cost,
             paid = BigDecimal.ZERO,
             status = OrderStatus.INIT,
@@ -94,21 +115,30 @@ class OrderService(private val orderGateway: OrderGateway, private val parkingSe
         val order = orderInfo.order
         val updatedOrder = order.copy(paid = order.paid + orderInfo.amountToPay, status = OrderStatus.PAID)
         updateOrder(updatedOrder)
-        return SessionInfo(order.sessionReference, order.startTime, order.endTime)
+        return SessionInfo(order.sessionReference, order.startTime, order.startTime.plus(order.duration))
     }
 
     fun stopSession(sessionId: String): Pair<SessionInfo, BigDecimal> {
         log.info("Stopping session: sessionId={}", sessionId)
         return try {
             val order = orderGateway.findPaidOrder(sessionId)
-            val updatedOrder = order.copy(endTime = ZonedDateTime.now(), status = OrderStatus.CANCELLED)
-            updateOrder(updatedOrder)
-
-            val refundableDuration = Duration.between(updatedOrder.endTime, order.endTime)
+            val stoppedDuration = Duration.between(order.startTime, ZonedDateTime.now())
+            val refundableDuration = order.duration.minus(stoppedDuration)
             val parkingInfo = parkingService.findParkingInfo(order.parkingId.toLong())
             val refundAmount = parkingInfo.tariff.multiply(refundableDuration.toBigDecimal())
+                .setScale(2, RoundingMode.HALF_UP)
 
-            SessionInfo(order.sessionReference, order.startTime, order.endTime) to refundAmount
+            val updatedOrder = order.copy(
+                duration = stoppedDuration,
+                paid = order.paid - refundAmount,
+                status = OrderStatus.CANCELLED
+            )
+            updateOrder(updatedOrder)
+
+            val account = accountService.findAccount(order.accountNumber)
+            accountService.updateAccount(account.copy(balance = account.balance + refundAmount))
+
+            SessionInfo(order.sessionReference, order.startTime, order.startTime.plus(stoppedDuration)) to refundAmount
         } catch (ex: GatewayException) {
             log.warn("Failed to stop session: sessionId={}", sessionId)
             throw OrderException("Failed to stop session")
@@ -117,7 +147,7 @@ class OrderService(private val orderGateway: OrderGateway, private val parkingSe
 
     private fun newReference() = UUID.randomUUID().toString().replace("-", "")
 
-    private fun Duration.toBigDecimal() = BigDecimal(this.toHours() + this.toMinutes() / 60.0)
+    private fun Duration.toBigDecimal() = BigDecimal(this.toMinutes() / 60.0)
 
     companion object {
         private val log = LoggerFactory.getLogger(OrderService::class.java)

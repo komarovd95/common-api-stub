@@ -7,6 +7,7 @@ import org.slf4j.LoggerFactory
 import ru.yandex.money.stubs.parking.common.api.gateways.GatewayException
 import ru.yandex.money.stubs.parking.common.api.gateways.NitriteGateway
 import java.math.BigDecimal
+import java.time.Duration
 import java.time.ZonedDateTime
 
 class NitriteOrderGateway(db: Nitrite) :
@@ -19,7 +20,7 @@ class NitriteOrderGateway(db: Nitrite) :
             .put(LICENSE_PLATE_FIELD, order.licensePlate)!!
             .put(ACCOUNT_NUMBER_FIELD, order.accountNumber)!!
             .put(START_TIME_FIELD, order.startTime.toOffsetDateTime().toString())!!
-            .put(END_TIME_FIELD, order.endTime.toOffsetDateTime().toString())!!
+            .put(DURATION_FIELD, order.duration.toString())!!
             .put(AMOUNT_FIELD, order.amount.toPlainString())!!
             .put(PAID_FIELD, order.paid.toPlainString())!!
             .put(STATUS_FIELD, order.status.code)!!
@@ -51,7 +52,7 @@ class NitriteOrderGateway(db: Nitrite) :
             licensePlate = document[LICENSE_PLATE_FIELD, String::class.java],
             accountNumber = document[ACCOUNT_NUMBER_FIELD, String::class.java],
             startTime = ZonedDateTime.parse(document[START_TIME_FIELD, String::class.java]),
-            endTime = ZonedDateTime.parse(document[END_TIME_FIELD, String::class.java]),
+            duration = Duration.parse(document[DURATION_FIELD, String::class.java]),
             amount = BigDecimal(document[AMOUNT_FIELD, String::class.java]),
             paid = BigDecimal(document[PAID_FIELD, String::class.java]),
             status = OrderStatus.byCode(document[STATUS_FIELD, String::class.java]),
@@ -80,7 +81,7 @@ class NitriteOrderGateway(db: Nitrite) :
             licensePlate = document[LICENSE_PLATE_FIELD, String::class.java],
             accountNumber = document[ACCOUNT_NUMBER_FIELD, String::class.java],
             startTime = ZonedDateTime.parse(document[START_TIME_FIELD, String::class.java]),
-            endTime = ZonedDateTime.parse(document[END_TIME_FIELD, String::class.java]),
+            duration = Duration.parse(document[DURATION_FIELD, String::class.java]),
             amount = BigDecimal(document[AMOUNT_FIELD, String::class.java]),
             paid = BigDecimal(document[PAID_FIELD, String::class.java]),
             status = OrderStatus.byCode(document[STATUS_FIELD, String::class.java]),
@@ -107,7 +108,7 @@ class NitriteOrderGateway(db: Nitrite) :
             licensePlate = document[LICENSE_PLATE_FIELD, String::class.java],
             accountNumber = document[ACCOUNT_NUMBER_FIELD, String::class.java],
             startTime = ZonedDateTime.parse(document[START_TIME_FIELD, String::class.java]),
-            endTime = ZonedDateTime.parse(document[END_TIME_FIELD, String::class.java]),
+            duration = Duration.parse(document[DURATION_FIELD, String::class.java]),
             amount = BigDecimal(document[AMOUNT_FIELD, String::class.java]),
             paid = BigDecimal(document[PAID_FIELD, String::class.java]),
             status = OrderStatus.byCode(document[STATUS_FIELD, String::class.java]),
@@ -122,7 +123,7 @@ class NitriteOrderGateway(db: Nitrite) :
             .put(LICENSE_PLATE_FIELD, order.licensePlate)!!
             .put(ACCOUNT_NUMBER_FIELD, order.accountNumber)!!
             .put(START_TIME_FIELD, order.startTime.toOffsetDateTime().toString())!!
-            .put(END_TIME_FIELD, order.endTime.toOffsetDateTime().toString())!!
+            .put(DURATION_FIELD, order.duration.toString())!!
             .put(AMOUNT_FIELD, order.amount.toPlainString())!!
             .put(PAID_FIELD, order.paid.toPlainString())!!
             .put(STATUS_FIELD, order.status.code)!!
@@ -142,7 +143,7 @@ class NitriteOrderGateway(db: Nitrite) :
         private const val LICENSE_PLATE_FIELD = "licensePlate"
         private const val ACCOUNT_NUMBER_FIELD = "accountNumber"
         private const val START_TIME_FIELD = "startTime"
-        private const val END_TIME_FIELD = "endTime"
+        private const val DURATION_FIELD = "duration"
         private const val AMOUNT_FIELD = "amount"
         private const val PAID_FIELD = "paid"
         private const val STATUS_FIELD = "status"

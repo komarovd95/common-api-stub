@@ -18,7 +18,7 @@ class NitriteAccountsGateway(db: Nitrite) :
             throw GatewayException("find_account($accountNumber)")
         }
         val document = cursor.single()
-        val balance = BigDecimal(document[BALANCE_FIELD, String::class.java])
+        val balance = BigDecimal(document[BALANCE_FIELD, String::class.java]).setScale(2, BigDecimal.ROUND_HALF_UP)
         return accountNumber to balance
     }
 

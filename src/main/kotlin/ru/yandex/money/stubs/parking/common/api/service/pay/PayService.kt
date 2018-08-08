@@ -10,6 +10,7 @@ import ru.yandex.money.stubs.parking.common.api.service.order.SessionInfo
 class PayService(private val accountService: AccountService, private val orderService: OrderService) {
 
     fun doPay(account: Account, order: OrderInfo): SessionInfo {
+        log.info("Doing pay: account={}, order={}", account, order)
         if (account.balance < order.amountToPay) {
             log.warn("Balance is less than amount to pay: account={}, order={}", account, order)
             throw PayException("Balance error")

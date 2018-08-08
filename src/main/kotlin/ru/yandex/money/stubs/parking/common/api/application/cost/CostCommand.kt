@@ -10,6 +10,7 @@ import ru.yandex.money.stubs.parking.common.api.service.order.OrderService
 import ru.yandex.money.stubs.parking.common.api.service.parkings.ParkingService
 import ru.yandex.money.stubs.parking.common.api.service.token.TokenService
 import java.math.BigDecimal
+import java.math.RoundingMode
 import java.time.Duration
 
 class CostCommand internal constructor(
@@ -25,7 +26,8 @@ class CostCommand internal constructor(
         log.info("Found parking info: parking={}", parking)
 
         val duration = request.duration
-        val cost = parking.tariff.multiply(duration.toBigDecimal())
+
+        val cost = parking.tariff.multiply(duration.toBigDecimal()).setScale(2, RoundingMode.HALF_UP)
         log.info("Calculated cost: duration={}, cost={}", duration, cost)
 
         val order = orderService.storeOrder(
@@ -41,7 +43,7 @@ class CostCommand internal constructor(
         return CostResponse(order.orderId, Balance(order.amountToPay))
     }
 
-    private fun Duration.toBigDecimal() = BigDecimal(this.toHours() + this.toMinutes() / 60.0)
+    private fun Duration.toBigDecimal() = BigDecimal(this.toMinutes() / 60.0)
 
     companion object {
         private val log = LoggerFactory.getLogger(CostCommand::class.java)
