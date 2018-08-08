@@ -3,6 +3,7 @@ package ru.yandex.money.stubs.parking.common.api.json
 import org.json.JSONObject
 import ru.yandex.money.stubs.parking.common.api.commands.errors.BadRequestError
 import java.math.BigDecimal
+import java.time.Duration
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.properties.ReadOnlyProperty
 import kotlin.reflect.KClass
@@ -50,6 +51,8 @@ abstract class JsonDeserializable(private val json: JSONObject) {
                 propertyClass == String::class -> getProperty(name) { json.getString(it) as T }
                 propertyClass == Long::class -> getProperty(name) { json.getLong(it) as T }
                 propertyClass == BigDecimal::class -> getProperty(name) { BigDecimal(json.getString(it)) as T }
+                propertyClass == Duration::class -> getProperty(name) { Duration.parse(json.getString(it)) as T }
+                propertyClass == JSONObject::class -> getProperty(name) { json.getJSONObject(it) as T }
                 JsonDeserializable::class.isSuperclassOf(propertyClass) -> getProperty(name) { onComplexType(json.getJSONObject(it)) }
                 else -> throw BadRequestError("unknown_type={$propertyClass}")
             }
