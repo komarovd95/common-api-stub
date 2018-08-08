@@ -4,7 +4,7 @@
         <append>true</append>
         <immediateFlush>true</immediateFlush>
         <encoder>
-            <pattern>[%d{YYYY-MM-dd HH:mm:ss.SSS}] %-5level [%thread] [%logger{36}] %msg%n</pattern>
+            <pattern>[%d{YYYY-MM-dd HH:mm:ss.SSS}] %-5level [%thread] [%X{command_name}] [%X{trace_id}] [%logger{0}] %msg%n</pattern>
         </encoder>
     </appender>
 

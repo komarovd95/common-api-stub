@@ -17,7 +17,7 @@ class NitriteParkingsRegistry(private val db: Nitrite) : ParkingsRegistry {
     init {
         val parkings = db.getCollection("parkings")
         if (!parkings.hasIndex("parkingId")) {
-            parkings.createIndex("parkingInd", IndexOptions.indexOptions(IndexType.Unique))
+            parkings.createIndex("parkingId", IndexOptions.indexOptions(IndexType.Unique))
         }
     }
 

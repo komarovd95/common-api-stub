@@ -19,11 +19,18 @@ import org.dizitart.no2.Nitrite
 import org.dizitart.no2.filters.Filters
 import org.dizitart.no2.tool.Exporter
 import ru.yandex.money.stubs.parking.common.api.accounts.NitriteAccountsRegistry
+import ru.yandex.money.stubs.parking.common.api.application.balance.getBalanceCommand
+import ru.yandex.money.stubs.parking.common.api.application.status.getStatusCommand
+import ru.yandex.money.stubs.parking.common.api.application.token.getTokenCommand
 import ru.yandex.money.stubs.parking.common.api.auth.AuthorizationException
 import ru.yandex.money.stubs.parking.common.api.auth.authenticated
 import ru.yandex.money.stubs.parking.common.api.auth.commonTokenRegistry
+import ru.yandex.money.stubs.parking.common.api.commands.handlers.handlerOf
 import ru.yandex.money.stubs.parking.common.api.data.DataRequest
 import ru.yandex.money.stubs.parking.common.api.data.DataService
+import ru.yandex.money.stubs.parking.common.api.gateways.accounts.NitriteAccountsGateway
+import ru.yandex.money.stubs.parking.common.api.gateways.credentials.NitriteCredentialsGateway
+import ru.yandex.money.stubs.parking.common.api.gateways.tokens.NitriteTokenGateway
 import ru.yandex.money.stubs.parking.common.api.json.JsonConverter
 import ru.yandex.money.stubs.parking.common.api.orders.NitriteOrdersRegistry
 import ru.yandex.money.stubs.parking.common.api.parkings.DefaultParkingsRegistry
@@ -45,6 +52,10 @@ import ru.yandex.money.stubs.parking.common.api.process.token.AuthorizationServi
 import ru.yandex.money.stubs.parking.common.api.process.token.NitriteCredentialsRegistry
 import ru.yandex.money.stubs.parking.common.api.process.token.NitriteTokenRegistry
 import ru.yandex.money.stubs.parking.common.api.process.token.TokenCredentials
+import ru.yandex.money.stubs.parking.common.api.service.accounts.CreateNewAccountService
+import ru.yandex.money.stubs.parking.common.api.service.accounts.DirectAccountService
+import ru.yandex.money.stubs.parking.common.api.service.status.DummyStatusService
+import ru.yandex.money.stubs.parking.common.api.service.token.TokenService
 import java.io.StringWriter
 import java.math.BigDecimal
 
@@ -98,69 +109,98 @@ fun main(args: Array<String>) {
 
     val costService = CostService(accountsRegistry, parkingsRegistry, ordersRegistry)
 
-    val payService = PayService(ordersRegistry)
+//    val payService = PayService(ordersRegistry)
 
-    val statusService = object : StatusService {
-        override fun status() = Status(true)
-    }
+//    val statusService = object : StatusService {
+//        override fun status() = Status(true)
+//    }
 
     commonTokenRegistry = tokenRegistry
 
     val dataService = DataService(db)
 
+
+
+
+
+
+
+    val credentialsGateway = NitriteCredentialsGateway(db) {
+        if (it.find(Filters.eq(NitriteCredentialsGateway.LOGIN_FIELD, "yandex")).size() == 1) {
+            return@NitriteCredentialsGateway
+        }
+
+        val credentials = Document.createDocument(NitriteCredentialsGateway.LOGIN_FIELD, "yandex")
+                .put(NitriteCredentialsGateway.PASSWORD_FIELD, "yandex")
+        it.update(credentials, true)
+    }
+    val tokenGateway = NitriteTokenGateway(db)
+    val accountsGateway = NitriteAccountsGateway(db)
+
+    val tokenService = TokenService(credentialsGateway, tokenGateway)
+    val statusService = DummyStatusService()
+    val accountService = DirectAccountService(accountsGateway)
+    val createNewAccountService = CreateNewAccountService(accountService, accountsGateway)
+
     val server = embeddedServer(Netty, port = 8080) {
         install(DefaultHeaders)
         install(CallLogging)
-        install(ContentNegotiation) {
-            register(ContentType.Application.Json, jsonConverter)
-        }
+//        install(ContentNegotiation) {
+//            register(ContentType.Application.Json, jsonConverter)
+//        }
 
-        install(StatusPages) {
-            exception<ApplicationException> {
-                context.respond(HttpStatusCode.BadRequest, it.error)
-            }
-
-            exception<AuthorizationException> {
-                context.respond(HttpStatusCode.Unauthorized, ApplicationError.ExpiredToken)
-            }
-
-            exception<Exception> {
-                context.respond(HttpStatusCode.InternalServerError, ApplicationError.TechnicalError)
-            }
-        }
+//        install(StatusPages) {
+//            exception<ApplicationException> {
+//                context.respond(HttpStatusCode.BadRequest, it.error)
+//            }
+//
+//            exception<AuthorizationException> {
+//                context.respond(HttpStatusCode.Unauthorized, ApplicationError.ExpiredToken)
+//            }
+//
+//            exception<Exception> {
+//                context.respond(HttpStatusCode.InternalServerError, ApplicationError.TechnicalError)
+//            }
+//        }
 
         routing {
             accept(ContentType.Application.Json) {
                 route("/v1") {
-                    post("/token") {
-                        val credentials = call.receive<TokenCredentials>()
-                        val token = authorizationService.createToken(credentials)
-                        call.respond(token)
-                    }
+                    post("/token", handlerOf(getTokenCommand(tokenService)))
 
-                    authenticated {
-                        post("/status") {
-                            call.respond(statusService.status())
-                        }
+                    post("/status", handlerOf(getStatusCommand(statusService, tokenService)))
 
-                        post("/get-balance") {
-                            val request = call.receive<BalanceRequest>()
-                            val response = balanceService.getBalance(request)
-                            call.respond(response)
-                        }
+                    post("/get-balance", handlerOf(getBalanceCommand(createNewAccountService, tokenService)))
 
-                        post("/deposit") {
-                            val request = call.receive<DepositRequest>()
-                            val response = depositService.doDeposit(request)
-                            call.respond(response)
-                        }
+//                    {
+//                        val credentials = call.receive<TokenCredentials>()
+//                        val token = authorizationService.createToken(credentials)
+//                        call.respond(token)
+//                    }
 
-                        post("/cost") {
-                            val request = call.receive<CostRequest>()
-                            val details = costService.getCost(request)
-                            call.respond(details)
-                        }
-                    }
+//                    authenticated {
+////                        post("/status") {
+////                            call.respond(statusService.status())
+////                        }
+//
+//                        post("/get-balance") {
+//                            val request = call.receive<BalanceRequest>()
+//                            val response = balanceService.getBalance(request)
+//                            call.respond(response)
+//                        }
+//
+//                        post("/deposit") {
+//                            val request = call.receive<DepositRequest>()
+//                            val response = depositService.doDeposit(request)
+//                            call.respond(response)
+//                        }
+//
+//                        post("/cost") {
+//                            val request = call.receive<CostRequest>()
+//                            val details = costService.getCost(request)
+//                            call.respond(details)
+//                        }
+//                    }
                 }
             }
 
