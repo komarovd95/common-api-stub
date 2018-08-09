@@ -89,6 +89,37 @@ class NitriteOrderGateway(db: Nitrite) :
         )
     }
 
+    override fun findActiveOrders(accountNumber: String, licensePlate: String): Collection<Order> {
+        log.info("Find active orders: accountNumber={}, licensePlate={}", accountNumber, licensePlate)
+        val cursor = collection.find(
+            Filters.and(
+                Filters.eq(ACCOUNT_NUMBER_FIELD, accountNumber),
+                Filters.eq(LICENSE_PLATE_FIELD, licensePlate),
+                Filters.or(
+                    Filters.eq(STATUS_FIELD, OrderStatus.PAID.code),
+                    Filters.eq(STATUS_FIELD, OrderStatus.PROLONGED.code)
+                )
+            )
+        )
+        return cursor.map {
+            Order(
+                orderId = it[ORDER_ID_FIELD, String::class.java],
+                parkingId = it[PARKING_ID_FIELD, String::class.java],
+                licensePlate = it[LICENSE_PLATE_FIELD, String::class.java],
+                accountNumber = it[ACCOUNT_NUMBER_FIELD, String::class.java],
+                startTime = ZonedDateTime.parse(it[START_TIME_FIELD, String::class.java]),
+                duration = Duration.parse(it[DURATION_FIELD, String::class.java]),
+                amount = BigDecimal(it[AMOUNT_FIELD, String::class.java]),
+                paid = BigDecimal(it[PAID_FIELD, String::class.java]),
+                status = OrderStatus.byCode(it[STATUS_FIELD, String::class.java]),
+                sessionReference = it[SESSION_REFERENCE_FIELD, String::class.java]
+            )
+        }.filter {
+            val endTime = it.startTime.plus(it.duration)
+            endTime.isAfter(ZonedDateTime.now())
+        }
+    }
+
     override fun findPaidOrder(sessionId: String): Order {
         log.info("Finding paid order: sessionId={}", sessionId)
         val cursor = collection.find(

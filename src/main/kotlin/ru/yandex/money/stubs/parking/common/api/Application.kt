@@ -14,6 +14,7 @@ import ru.yandex.money.stubs.parking.common.api.application.balance.getBalanceCo
 import ru.yandex.money.stubs.parking.common.api.application.cost.costCommand
 import ru.yandex.money.stubs.parking.common.api.application.deposit.depositCommand
 import ru.yandex.money.stubs.parking.common.api.application.pay.payCommand
+import ru.yandex.money.stubs.parking.common.api.application.sessions.activeSessionsCommand
 import ru.yandex.money.stubs.parking.common.api.application.status.getStatusCommand
 import ru.yandex.money.stubs.parking.common.api.application.stop.stopParkingCommand
 import ru.yandex.money.stubs.parking.common.api.application.token.getTokenCommand
@@ -89,6 +90,7 @@ fun main(args: Array<String>) {
                     post("/cost", handlerOf(costCommand(createNewAccountService, parkingService, orderService, tokenService)))
                     post("/pay", handlerOf(payCommand(orderService, accountService, payService, tokenService)))
                     post("/stop-parking", handlerOf(stopParkingCommand(orderService, tokenService)))
+                    post("/active-sessions", handlerOf(activeSessionsCommand(orderService, parkingService, tokenService)))
                 }
                 route("/_s") {
                     get("/get-data", handlerOf(getDataCommand(dataService)))

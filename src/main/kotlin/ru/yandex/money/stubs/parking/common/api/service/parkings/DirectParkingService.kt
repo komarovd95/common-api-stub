@@ -9,12 +9,23 @@ class DirectParkingService(private val parkingGateway: ParkingGateway) : Parking
     override fun findParkingInfo(parkingId: Long): Parking {
         log.info("Finding parking info: parkingId={}", parkingId)
         return try {
-            val (id, tariff) = parkingGateway.findParkingInfo(parkingId.toString())
-            Parking(id, tariff)
+            val (id, tariff, name) = parkingGateway.findParkingInfo(parkingId.toString())
+            Parking(id, tariff, name)
         } catch (ex: GatewayException) {
             log.info("Failed to find parking info in gateway: parkingId={}", parkingId)
             throw ParkingException("Failed to find parking info")
         }
+    }
+
+    override fun findParkingInfos(parkingIds: Collection<Long>): Map<Long, Parking> {
+        log.info("Finding parking infos: parkingIds={}", parkingIds)
+        return parkingGateway.findParkingInfos(parkingIds.map { it.toString() })
+            .mapKeys { (k, _) ->
+                k.toLong()
+            }
+            .mapValues { (_, v) ->
+                Parking(v.first, v.second, v.third)
+            }
     }
 
     companion object {

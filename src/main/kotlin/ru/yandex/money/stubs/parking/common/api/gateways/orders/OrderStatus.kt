@@ -1,7 +1,7 @@
 package ru.yandex.money.stubs.parking.common.api.gateways.orders
 
 enum class OrderStatus(val code: String) {
-    INIT("init"), PAID("paid"), CANCELLED("cancelled");
+    INIT("init"), PAID("paid"), PROLONGED("prolonged"), CANCELLED("cancelled");
 
     companion object {
         fun byCode(code: String): OrderStatus {

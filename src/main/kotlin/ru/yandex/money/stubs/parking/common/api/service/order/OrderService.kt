@@ -44,7 +44,7 @@ class OrderService(
                 val newStatus = if (order.cost.compareTo(BigDecimal.ZERO) == 0) {
                     existingOrder.status
                 } else {
-                    OrderStatus.INIT
+                    OrderStatus.PROLONGED
                 }
 
                 existingOrder.copy(
@@ -110,12 +110,28 @@ class OrderService(
         }
     }
 
+    fun findOrders(accountNumber: String, licensePlate: String): Collection<Order> {
+        log.info("Finding orders: accountNumber={}, licensePlate={}", accountNumber, licensePlate)
+        return try {
+            orderGateway.findActiveOrders(accountNumber, licensePlate)
+        } catch (ex: GatewayException) {
+            log.warn("Failed to find active orders: accountNumber={}, licensePlate={}",
+                accountNumber, licensePlate)
+            throw OrderException("Failed to find active orders")
+        }
+    }
+
     fun payForOrder(orderInfo: OrderInfo): SessionInfo {
         log.info("Paying for order: orderInfo={}", orderInfo)
         val order = orderInfo.order
-        val updatedOrder = order.copy(paid = order.paid + orderInfo.amountToPay, status = OrderStatus.PAID)
+        val startTime = if (order.status == OrderStatus.INIT) {
+            ZonedDateTime.now()
+        } else {
+            order.startTime
+        }
+        val updatedOrder = order.copy(paid = order.paid + orderInfo.amountToPay, startTime = startTime, status = OrderStatus.PAID)
         updateOrder(updatedOrder)
-        return SessionInfo(order.sessionReference, order.startTime, order.startTime.plus(order.duration))
+        return SessionInfo(updatedOrder.sessionReference, updatedOrder.startTime, updatedOrder.startTime.plus(updatedOrder.duration))
     }
 
     fun stopSession(sessionId: String): Pair<SessionInfo, BigDecimal> {

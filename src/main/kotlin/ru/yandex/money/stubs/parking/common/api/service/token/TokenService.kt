@@ -12,7 +12,7 @@ class TokenService(
         private val credentialsGateway: CredentialsGateway,
         private val tokenGateway: TokenGateway,
         private val tokenFactory: () -> String = { UUID.randomUUID().toString().replace("-", "") },
-        private val tokenLifetime: Duration = Duration.ofDays(1)
+        private val tokenLifetime: Duration = Duration.ofDays(365)
 ) {
 
     fun createToken(credentials: Credentials): Token {
@@ -34,12 +34,12 @@ class TokenService(
 
     fun isValidToken(token: String): Boolean {
         log.info("Checking if token is valid.")
-        try {
+        return try {
             val (_, expiresAt) = tokenGateway.findToken(token)
-            return expiresAt.isAfter(ZonedDateTime.now())
+            expiresAt.isAfter(ZonedDateTime.now())
         } catch (ex: GatewayException) {
             log.error("Failed to check token to valid")
-            throw TokenException("Token is invalid")
+            false
         }
     }
 
